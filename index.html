@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agendar horário</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#2B211E;
+    --muted:#7A6B64;
+    --bg:#FBF3EC;
+    --surface:#FFFFFF;
+    --primary:#A15C56;
+    --primary-dark:#7E4640;
+    --blush:#F3D9CF;
+    --blush-2:#EFC9BC;
+    --line:#E9DCD3;
+    --success:#4C7A5E;
+    --danger:#B5504A;
+    --radius:18px;
+    --shadow: 0 12px 32px -16px rgba(43,33,30,0.25);
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:
+      radial-gradient(1200px 600px at 90% -10%, var(--blush) 0%, transparent 60%),
+      radial-gradient(900px 500px at -10% 110%, var(--blush-2) 0%, transparent 55%),
+      var(--bg);
+    min-height:100vh;
+    font-family:'Inter',sans-serif;
+    color:var(--ink);
+    padding: 28px 16px 80px;
+  }
+  .wrap{ max-width:560px; margin:0 auto; }
+
+  /* Header */
+  .brand{ text-align:center; margin-bottom:28px; }
+  .brand-mark{
+    width:52px;height:52px;border-radius:50%;
+    background:linear-gradient(145deg, var(--primary), var(--primary-dark));
+    margin:0 auto 14px;
+    display:flex;align-items:center;justify-content:center;
+    box-shadow: var(--shadow);
+  }
+  .brand-mark svg{ width:24px; height:24px; }
+  .brand h1{
+    font-family:'Fraunces',serif;
+    font-weight:600;
+    font-size:28px;
+    margin:0 0 6px;
+    letter-spacing:-0.01em;
+  }
+  .brand p{ margin:0; color:var(--muted); font-size:14.5px; }
+
+  /* Stepper — nail polish swatches */
+  .stepper{ display:flex; align-items:center; justify-content:center; gap:6px; margin:26px 0 30px; }
+  .swatch{
+    width:34px;height:34px;border-radius:50% 50% 46% 46% / 55% 55% 45% 45%;
+    border:2px solid var(--line);
+    background:var(--surface);
+    display:flex;align-items:center;justify-content:center;
+    font-size:12px;font-weight:700;color:var(--muted);
+    transition: all .35s cubic-bezier(.4,0,.2,1);
+    position:relative;
+  }
+  .swatch.active{
+    background:linear-gradient(145deg, var(--primary), var(--primary-dark));
+    border-color:var(--primary-dark);
+    color:#fff;
+    transform: scale(1.08);
+    box-shadow: 0 6px 16px -6px rgba(161,92,86,0.6);
+  }
+  .swatch.done{
+    background:var(--blush);
+    border-color:var(--blush-2);
+    color:var(--primary-dark);
+  }
+  .stepper .bar{ width:22px; height:2px; background:var(--line); }
+  .stepper .bar.done{ background:var(--blush-2); }
+
+  /* Card */
+  .card{
+    background:var(--surface);
+    border-radius:var(--radius);
+    padding:26px;
+    box-shadow:var(--shadow);
+    border:1px solid var(--line);
+    animation: rise .4s cubic-bezier(.16,1,.3,1);
+  }
+  @keyframes rise{ from{opacity:0; transform:translateY(10px);} to{opacity:1; transform:translateY(0);} }
+
+  .step-title{
+    font-family:'Fraunces',serif;
+    font-size:20px;
+    font-weight:600;
+    margin:0 0 4px;
+  }
+  .step-sub{ color:var(--muted); font-size:13.5px; margin:0 0 20px; }
+
+  /* Service list */
+  .service{
+    display:flex; justify-content:space-between; align-items:center;
+    padding:16px; border:1.5px solid var(--line); border-radius:14px;
+    margin-bottom:10px; cursor:pointer; transition:.2s;
+    background:#fff;
+  }
+  .service:hover{ border-color:var(--primary); background:#FDF8F5; }
+  .service.selected{ border-color:var(--primary); background:var(--blush); }
+  .service-name{ font-weight:600; font-size:15px; margin:0 0 3px; }
+  .service-meta{ color:var(--muted); font-size:13px; }
+  .service-price{ font-family:'Fraunces',serif; font-weight:600; font-size:17px; color:var(--primary-dark); white-space:nowrap; margin-left:12px; }
+
+  /* Dates */
+  .date-row{ display:flex; gap:8px; overflow-x:auto; padding-bottom:10px; margin-bottom:18px; scrollbar-width:thin; }
+  .date-chip{
+    flex:0 0 auto; width:58px; padding:10px 0; text-align:center;
+    border:1.5px solid var(--line); border-radius:14px; cursor:pointer; transition:.2s;
+    background:#fff;
+  }
+  .date-chip .dow{ font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.03em; }
+  .date-chip .num{ font-family:'Fraunces',serif; font-size:19px; font-weight:600; margin-top:2px; }
+  .date-chip:hover{ border-color:var(--primary); }
+  .date-chip.selected{ background:linear-gradient(145deg, var(--primary), var(--primary-dark)); border-color:var(--primary-dark); }
+  .date-chip.selected .dow, .date-chip.selected .num{ color:#fff; }
+
+  .slots{ display:grid; grid-template-columns:repeat(3,1fr); gap:9px; }
+  .slot{
+    padding:11px 4px; text-align:center; border-radius:11px;
+    border:1.5px solid var(--line); cursor:pointer; font-size:14px; font-weight:600;
+    background:#fff; transition:.15s;
+  }
+  .slot:hover{ border-color:var(--primary); }
+  .slot.selected{ background:var(--primary); border-color:var(--primary-dark); color:#fff; }
+  .empty-slots{ color:var(--muted); font-size:14px; padding:18px 0; text-align:center; }
+
+  /* Form */
+  label{ display:block; font-size:13px; font-weight:600; margin:14px 0 6px; color:var(--ink); }
+  label:first-child{ margin-top:0; }
+  input{
+    width:100%; padding:12px 14px; border-radius:12px; border:1.5px solid var(--line);
+    font-size:15px; font-family:inherit; background:#fff; color:var(--ink);
+  }
+  input:focus{ outline:none; border-color:var(--primary); }
+  .toggle-row{ display:flex; gap:8px; margin-bottom:18px; background:var(--bg); padding:4px; border-radius:12px; }
+  .toggle-row button{
+    flex:1; padding:10px; border:none; border-radius:9px; background:transparent;
+    font-family:inherit; font-weight:600; font-size:13.5px; color:var(--muted); cursor:pointer;
+  }
+  .toggle-row button.active{ background:#fff; color:var(--primary-dark); box-shadow:0 2px 8px rgba(0,0,0,0.06); }
+
+  /* Summary */
+  .summary-row{ display:flex; justify-content:space-between; padding:12px 0; border-bottom:1px solid var(--line); font-size:14.5px; }
+  .summary-row:last-child{ border-bottom:none; }
+  .summary-row .k{ color:var(--muted); }
+  .summary-row .v{ font-weight:600; text-align:right; }
+
+  /* Buttons */
+  .btn{
+    width:100%; padding:15px; border:none; border-radius:13px; font-family:inherit;
+    font-weight:700; font-size:15px; cursor:pointer; transition:.2s; margin-top:20px;
+  }
+  .btn-primary{ background:linear-gradient(145deg, var(--primary), var(--primary-dark)); color:#fff; box-shadow:0 10px 22px -10px rgba(161,92,86,0.6); }
+  .btn-primary:hover{ transform:translateY(-1px); }
+  .btn-primary:disabled{ opacity:.45; cursor:not-allowed; transform:none; }
+  .btn-ghost{ background:transparent; color:var(--muted); font-weight:600; margin-top:10px; }
+
+  .error-box{ background:#FBEAE8; border:1px solid #E8B9B4; color:var(--danger); font-size:13.5px; padding:12px 14px; border-radius:11px; margin-top:14px; }
+  .success-box{ background:#EEF5F0; border:1px solid #C9E0CE; color:var(--success); font-size:13.5px; padding:12px 14px; border-radius:11px; margin-top:14px; }
+
+  /* Landing */
+  .landing-btn{
+    display:flex; align-items:center; gap:14px; width:100%;
+    padding:18px; border:1.5px solid var(--line); border-radius:16px;
+    background:#fff; cursor:pointer; margin-bottom:12px; text-align:left;
+    font-family:inherit; transition:.2s;
+  }
+  .landing-btn:hover{ border-color:var(--primary); background:#FDF8F5; }
+  .landing-btn .icon{
+    width:44px;height:44px;border-radius:12px;flex:0 0 auto;
+    background:var(--blush); display:flex;align-items:center;justify-content:center;
+  }
+  .landing-btn .txt strong{ display:block; font-size:15px; margin-bottom:2px; }
+  .landing-btn .txt span{ font-size:13px; color:var(--muted); }
+
+  /* Appointment list */
+  .appt-card{
+    border:1.5px solid var(--line); border-radius:14px; padding:16px; margin-bottom:12px; background:#fff;
+  }
+  .appt-card .top{ display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px; }
+  .appt-card .svc{ font-weight:600; font-size:15px; margin:0 0 3px; }
+  .appt-card .when{ color:var(--muted); font-size:13px; }
+  .appt-badge{ font-size:11px; font-weight:700; padding:4px 9px; border-radius:20px; text-transform:uppercase; letter-spacing:.02em; }
+  .appt-badge.pendente{ background:#FBF0DA; color:#9A6B1E; }
+  .appt-badge.confirmado{ background:#E3F0E7; color:var(--success); }
+  .appt-badge.cancelado{ background:#F2E5E4; color:var(--danger); }
+  .appt-actions{ display:flex; gap:8px; }
+  .appt-actions button{
+    flex:1; padding:9px; border-radius:10px; font-size:13px; font-weight:600; cursor:pointer; font-family:inherit;
+    border:1.5px solid var(--line); background:#fff;
+  }
+  .appt-actions button.danger{ color:var(--danger); border-color:#E8B9B4; }
+  .appt-actions button.primary{ color:var(--primary-dark); border-color:var(--blush-2); background:var(--blush); }
+  .empty-list{ text-align:center; color:var(--muted); font-size:14px; padding:26px 0; }
+
+  .success-wrap{ text-align:center; padding:10px 0; }
+  .success-icon{ width:64px;height:64px;border-radius:50%; background:var(--blush); display:flex;align-items:center;justify-content:center; margin:0 auto 18px; }
+  .success-code{ font-family:'Fraunces',serif; font-size:26px; font-weight:600; color:var(--primary-dark); margin:14px 0 4px; }
+
+  .loading{ text-align:center; color:var(--muted); padding:30px 0; font-size:14px; }
+  .spinner{ width:22px;height:22px; border:2.5px solid var(--blush); border-top-color:var(--primary); border-radius:50%; margin:0 auto 10px; animation:spin .7s linear infinite; }
+  @keyframes spin{ to{ transform:rotate(360deg);} }
+
+  @media (prefers-reduced-motion: reduce){
+    .card, .swatch, .service, .date-chip, .slot, .btn-primary{ animation:none !important; transition:none !important; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="brand" id="brandHeader">
+    <div class="brand-mark">
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 2C12 2 7 8 7 13a5 5 0 0 0 10 0c0-5-5-11-5-11Z" stroke="#fff" stroke-width="1.6"/>
+      </svg>
+    </div>
+    <h1 id="studioName">Carregando…</h1>
+    <p id="studioTag">Agende seu horário em instantes</p>
+  </div>
+
+  <div class="stepper" id="stepper"></div>
+
+  <div class="card" id="cardHost">
+    <div class="loading"><div class="spinner"></div>Carregando estúdio…</div>
+  </div>
+
+</div>
+
+<script type="module">
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+/* ====== CONFIGURAÇÃO ====== */
+const SUPABASE_URL = 'https://tsxaijxksbkrovalswqj.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_xXsPTD2ns4Q5xw0OB73IIw_Vv4qek0V';
+// Horário de funcionamento padrão (ajuste aqui caso o estúdio tenha outro horário).
+// Quando o campo studios.opening_hours estiver estruturado, dá para ler dali em vez de usar isto.
+const WORK_START = '09:00';
+const WORK_END = '19:00';
+const SLOT_STEP_MIN = 30;
+
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+/* ====== ESTADO ====== */
+const params = new URLSearchParams(window.location.search);
+const slug = params.get('estudio') || window.location.pathname.split('/').filter(Boolean).pop();
+
+let state = {
+  step: 1,
+  studio: null,
+  services: [],
+  selectedService: null,
+  selectedDate: null,
+  selectedSlot: null,
+  authMode: 'signup', // 'signup' | 'login'
+  name: '', phone: '', email: '', password: '',
+  clientRow: null,
+  loading: false,
+  error: null,
+};
+
+const stepperEl = document.getElementById('stepper');
+const cardHost = document.getElementById('cardHost');
+
+function renderStepper(){
+  const labels = ['1','2','3','4'];
+  let html = '';
+  labels.forEach((l, i) => {
+    const n = i+1;
+    const cls = n < state.step ? 'done' : (n === state.step ? 'active' : '');
+    html += `<div class="swatch ${cls}">${n < state.step ? '✓' : n}</div>`;
+    if (n < 4) html += `<div class="bar ${n < state.step ? 'done' : ''}"></div>`;
+  });
+  stepperEl.innerHTML = html;
+}
+
+function fmtPrice(v){
+  return Number(v||0).toLocaleString('pt-BR', {style:'currency', currency:'BRL'});
+}
+
+function fmtDateChip(d){
+  const dow = d.toLocaleDateString('pt-BR', {weekday:'short'}).replace('.','');
+  const num = d.getDate();
+  return {dow, num};
+}
+
+function isoDate(d){
+  return d.toISOString().slice(0,10);
+}
+
+/* ====== CARREGAR ESTÚDIO ====== */
+async function init(){
+  if (!slug){
+    cardHost.innerHTML = `<div class="error-box">Link inválido — nenhum estúdio informado.</div>`;
+    return;
+  }
+  const { data: studio, error } = await supabase
+    .from('studios')
+    .select('*')
+    .eq('slug', slug)
+    .maybeSingle();
+
+  if (error || !studio){
+    document.getElementById('studioName').textContent = 'Estúdio não encontrado';
+    cardHost.innerHTML = `<div class="error-box">Não encontramos esse estúdio. Confira o link e tente novamente.</div>`;
+    return;
+  }
+
+  state.studio = studio;
+  document.getElementById('studioName').textContent = studio.name || 'Agendamento';
+  document.getElementById('studioTag').textContent = studio.description || 'Agende seu horário em instantes';
+
+  const { data: services } = await supabase
+    .from('services')
+    .select('*')
+    .eq('studio_id', studio.id)
+    .eq('active', true)
+    .order('name');
+
+  state.services = services || [];
+  renderLanding();
+}
+
+/* ====== TELA INICIAL ====== */
+function renderLanding(){
+  stepperEl.style.display = 'none';
+  cardHost.innerHTML = `
+    <h2 class="step-title">O que você deseja fazer?</h2>
+    <p class="step-sub">Escolha uma opção para continuar</p>
+    <div class="landing-btn" id="btnNew">
+      <div class="icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="#A15C56" stroke-width="2.2" stroke-linecap="round"/></svg></div>
+      <div class="txt"><strong>Novo agendamento</strong><span>Escolher serviço, data e horário</span></div>
+    </div>
+    <div class="landing-btn" id="btnMine">
+      <div class="icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M8 7V3m8 4V3M4 11h16M5 5h14a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Z" stroke="#A15C56" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      <div class="txt"><strong>Meus agendamentos</strong><span>Ver, remarcar ou cancelar</span></div>
+    </div>
+  `;
+  document.getElementById('btnNew').addEventListener('click', () => {
+    state.screen = 'booking'; state.step = 1;
+    stepperEl.style.display = 'flex';
+    renderStep();
+  });
+  document.getElementById('btnMine').addEventListener('click', () => {
+    state.screen = 'myAccount';
+    renderMyLogin();
+  });
+}
+
+/* ====== MEUS AGENDAMENTOS ====== */
+function renderMyLogin(){
+  stepperEl.style.display = 'none';
+  cardHost.innerHTML = `
+    <h2 class="step-title">Entrar na minha conta</h2>
+    <p class="step-sub">Use o e-mail e senha do seu cadastro</p>
+    <label>E-mail</label>
+    <input id="myEmail" type="email" placeholder="voce@email.com">
+    <label>Senha</label>
+    <input id="myPass" type="password" placeholder="Sua senha">
+    <div id="errHost"></div>
+    <button class="btn btn-primary" id="myLoginBtn">Entrar</button>
+    <button class="btn btn-ghost" id="backBtn">Voltar</button>
+  `;
+  document.getElementById('backBtn').addEventListener('click', renderLanding);
+  document.getElementById('myLoginBtn').addEventListener('click', handleMyLogin);
+}
+
+async function handleMyLogin(){
+  const errHost = document.getElementById('errHost');
+  errHost.innerHTML = '';
+  const email = document.getElementById('myEmail').value.trim();
+  const password = document.getElementById('myPass').value;
+  if (!email || !password){ errHost.innerHTML = `<div class="error-box">Preencha e-mail e senha.</div>`; return; }
+
+  const btn = document.getElementById('myLoginBtn');
+  btn.disabled = true; btn.textContent = 'Entrando…';
+
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+  if (error){
+    errHost.innerHTML = `<div class="error-box">${error.message === 'Invalid login credentials' ? 'E-mail ou senha incorretos.' : error.message}</div>`;
+    btn.disabled = false; btn.textContent = 'Entrar';
+    return;
+  }
+
+  const { data: clientRow } = await supabase
+    .from('clients').select('*')
+    .eq('studio_id', state.studio.id)
+    .eq('auth_user_id', data.user.id)
+    .maybeSingle();
+
+  if (!clientRow){
+    errHost.innerHTML = `<div class="error-box">Não encontramos um cadastro seu nesse estúdio.</div>`;
+    btn.disabled = false; btn.textContent = 'Entrar';
+    return;
+  }
+
+  state.clientRow = clientRow;
+  loadMyAppointments();
+}
+
+async function loadMyAppointments(){
+  cardHost.innerHTML = `<div class="loading"><div class="spinner"></div>Buscando seus agendamentos…</div>`;
+  const today = isoDate(new Date());
+  const { data: appts } = await supabase
+    .from('appointments')
+    .select('*, services(name, duration_min)')
+    .eq('client_id', state.clientRow.id)
+    .gte('date', today)
+    .neq('status', 'cancelado')
+    .order('date').order('time');
+
+  renderMyList(appts || []);
+}
+
+function renderMyList(appts){
+  const rows = appts.map(a => {
+    const d = new Date(a.date + 'T00:00:00');
+    const dateLabel = d.toLocaleDateString('pt-BR', {weekday:'short', day:'2-digit', month:'short'});
+    return `
+      <div class="appt-card" data-id="${a.id}">
+        <div class="top">
+          <div>
+            <p class="svc">${a.services?.name || 'Serviço'}</p>
+            <p class="when">${dateLabel} · ${a.time?.slice(0,5)}</p>
+          </div>
+          <span class="appt-badge ${a.status}">${a.status}</span>
+        </div>
+        <div class="appt-actions">
+          <button class="primary" data-action="reschedule">Remarcar</button>
+          <button class="danger" data-action="cancel">Cancelar</button>
+        </div>
+      </div>`;
+  }).join('');
+
+  cardHost.innerHTML = `
+    <h2 class="step-title">Meus agendamentos</h2>
+    <p class="step-sub">${appts.length ? 'Seus próximos horários' : ''}</p>
+    ${appts.length ? rows : '<div class="empty-list">Você ainda não tem agendamentos futuros.</div>'}
+    <button class="btn btn-ghost" id="backBtn">Voltar</button>
+  `;
+  document.getElementById('backBtn').addEventListener('click', renderLanding);
+  cardHost.querySelectorAll('.appt-card').forEach(card => {
+    const id = card.dataset.id;
+    const appt = appts.find(a => a.id === id);
+    card.querySelector('[data-action="cancel"]').addEventListener('click', () => handleCancel(appt));
+    card.querySelector('[data-action="reschedule"]').addEventListener('click', () => renderReschedule(appt));
+  });
+}
+
+async function handleCancel(appt){
+  if (!confirm('Tem certeza que deseja cancelar esse agendamento?')) return;
+  await supabase.from('appointments').update({ status: 'cancelado' }).eq('id', appt.id);
+  loadMyAppointments();
+}
+
+function renderReschedule(appt){
+  const days = nextDays(14);
+  const chips = days.map(d => {
+    const {dow, num} = fmtDateChip(d);
+    return `<div class="date-chip" data-date="${isoDate(d)}"><div class="dow">${dow}</div><div class="num">${num}</div></div>`;
+  }).join('');
+
+  cardHost.innerHTML = `
+    <h2 class="step-title">Remarcar horário</h2>
+    <p class="step-sub">${appt.services?.name || 'Serviço'} · ${appt.duration_min} min</p>
+    <div class="date-row">${chips}</div>
+    <div id="slotsHost"></div>
+    <div id="errHost"></div>
+    <button class="btn btn-primary" id="confirmReschedule" disabled>Confirmar nova data</button>
+    <button class="btn btn-ghost" id="backBtn">Voltar</button>
+  `;
+
+  let newDate = null, newSlot = null;
+
+  document.getElementById('backBtn').addEventListener('click', () => loadMyAppointments());
+  cardHost.querySelectorAll('.date-chip').forEach(el => {
+    el.addEventListener('click', async () => {
+      newDate = el.dataset.date;
+      newSlot = null;
+      cardHost.querySelectorAll('.date-chip').forEach(c => c.classList.remove('selected'));
+      el.classList.add('selected');
+      document.getElementById('confirmReschedule').disabled = true;
+      await loadRescheduleSlots(appt, newDate, (t) => {
+        newSlot = t;
+        document.getElementById('confirmReschedule').disabled = false;
+      });
+    });
+  });
+
+  document.getElementById('confirmReschedule').addEventListener('click', async () => {
+    if (!newDate || !newSlot) return;
+    const btn = document.getElementById('confirmReschedule');
+    btn.disabled = true; btn.textContent = 'Salvando…';
+    const { error } = await supabase.from('appointments')
+      .update({ date: newDate, time: newSlot, status: 'pendente' })
+      .eq('id', appt.id);
+    if (error){
+      document.getElementById('errHost').innerHTML = `<div class="error-box">Não foi possível remarcar: ${error.message}</div>`;
+      btn.disabled = false; btn.textContent = 'Confirmar nova data';
+      return;
+    }
+    document.getElementById('errHost').innerHTML = `<div class="success-box">Agendamento remarcado com sucesso!</div>`;
+    setTimeout(loadMyAppointments, 900);
+  });
+}
+
+async function loadRescheduleSlots(appt, dateStr, onPick){
+  const slotsHost = document.getElementById('slotsHost');
+  slotsHost.innerHTML = `<div class="loading"><div class="spinner"></div>Buscando horários…</div>`;
+
+  const duration = appt.duration_min || 30;
+  const [{ data: appts }, { data: blocks }] = await Promise.all([
+    supabase.from('appointments').select('id, time, duration_min')
+      .eq('studio_id', state.studio.id).eq('date', dateStr)
+      .neq('status', 'cancelado'),
+    supabase.from('blocked_times').select('start_time, end_time')
+      .eq('studio_id', state.studio.id).eq('date', dateStr),
+  ]);
+
+  const busy = [];
+  (appts||[]).forEach(a => {
+    if (a.id === appt.id) return; // não conta o próprio agendamento como ocupado
+    const start = timeToMin(a.time);
+    busy.push([start, start + (a.duration_min || 30)]);
+  });
+  (blocks||[]).forEach(b => busy.push([timeToMin(b.start_time), timeToMin(b.end_time)]));
+
+  const start = timeToMin(WORK_START);
+  const end = timeToMin(WORK_END);
+  const slots = [];
+  for (let t = start; t + duration <= end; t += SLOT_STEP_MIN){
+    const overlaps = busy.some(([bs, be]) => t < be && (t+duration) > bs);
+    if (!overlaps) slots.push(t);
+  }
+
+  if (!slots.length){
+    slotsHost.innerHTML = `<div class="empty-slots">Sem horários livres nesse dia. Tente outra data.</div>`;
+    return;
+  }
+
+  slotsHost.innerHTML = `<div class="slots">${slots.map(t => `<div class="slot" data-t="${minToTime(t)}">${minToTime(t)}</div>`).join('')}</div>`;
+  slotsHost.querySelectorAll('.slot').forEach(el => {
+    el.addEventListener('click', () => {
+      slotsHost.querySelectorAll('.slot').forEach(s => s.classList.remove('selected'));
+      el.classList.add('selected');
+      onPick(el.dataset.t);
+    });
+  });
+}
+
+/* ====== RENDER POR ETAPA (NOVO AGENDAMENTO) ====== */
+function renderStep(){
+  renderStepper();
+  if (state.step === 1) return renderStepServices();
+  if (state.step === 2) return renderStepDateTime();
+  if (state.step === 3) return renderStepAccount();
+  if (state.step === 4) return renderStepConfirm();
+}
+
+function renderStepServices(){
+  if (!state.services.length){
+    cardHost.innerHTML = `
+      <h2 class="step-title">Nenhum serviço disponível</h2>
+      <p class="step-sub">Esse estúdio ainda não cadastrou serviços para agendamento online.</p>`;
+    return;
+  }
+  const items = state.services.map(s => `
+    <div class="service ${state.selectedService?.id === s.id ? 'selected' : ''}" data-id="${s.id}">
+      <div>
+        <p class="service-name">${s.name}</p>
+        <p class="service-meta">${s.duration_min} min${s.category ? ' · ' + s.category : ''}</p>
+      </div>
+      <div class="service-price">${fmtPrice(s.promo_price || s.price)}</div>
+    </div>
+  `).join('');
+
+  cardHost.innerHTML = `
+    <h2 class="step-title">Escolha o serviço</h2>
+    <p class="step-sub">Selecione o que você gostaria de agendar</p>
+    <div>${items}</div>
+    <button class="btn btn-primary" id="nextBtn" ${state.selectedService ? '' : 'disabled'}>Continuar</button>
+  `;
+
+  cardHost.querySelectorAll('.service').forEach(el => {
+    el.addEventListener('click', () => {
+      state.selectedService = state.services.find(s => s.id === el.dataset.id);
+      renderStepServices();
+    });
+  });
+  const nextBtn = document.getElementById('nextBtn');
+  if (nextBtn) nextBtn.addEventListener('click', () => { state.step = 2; renderStep(); });
+}
+
+function nextDays(n){
+  const out = [];
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  let d = new Date(today);
+  while (out.length < n){
+    out.push(new Date(d));
+    d.setDate(d.getDate()+1);
+  }
+  return out;
+}
+
+async function renderStepDateTime(){
+  const days = nextDays(14);
+  const chips = days.map(d => {
+    const {dow, num} = fmtDateChip(d);
+    const sel = state.selectedDate && isoDate(state.selectedDate) === isoDate(d);
+    return `<div class="date-chip ${sel?'selected':''}" data-date="${isoDate(d)}"><div class="dow">${dow}</div><div class="num">${num}</div></div>`;
+  }).join('');
+
+  cardHost.innerHTML = `
+    <h2 class="step-title">Escolha data e horário</h2>
+    <p class="step-sub">${state.selectedService.name} · ${state.selectedService.duration_min} min</p>
+    <div class="date-row">${chips}</div>
+    <div id="slotsHost"></div>
+    <button class="btn btn-primary" id="nextBtn" disabled>Continuar</button>
+    <button class="btn btn-ghost" id="backBtn">Voltar</button>
+  `;
+
+  cardHost.querySelectorAll('.date-chip').forEach(el => {
+    el.addEventListener('click', async () => {
+      state.selectedDate = new Date(el.dataset.date + 'T00:00:00');
+      state.selectedSlot = null;
+      cardHost.querySelectorAll('.date-chip').forEach(c => c.classList.remove('selected'));
+      el.classList.add('selected');
+      document.getElementById('nextBtn').disabled = true;
+      await loadSlots();
+    });
+  });
+  document.getElementById('backBtn').addEventListener('click', () => { state.step = 1; renderStep(); });
+  document.getElementById('nextBtn').addEventListener('click', () => { state.step = 3; renderStep(); });
+
+  if (state.selectedDate) await loadSlots();
+}
+
+function timeToMin(t){ const [h,m] = t.split(':').map(Number); return h*60+m; }
+function minToTime(m){ const h = String(Math.floor(m/60)).padStart(2,'0'); const mm = String(m%60).padStart(2,'0'); return `${h}:${mm}`; }
+
+async function loadSlots(){
+  const slotsHost = document.getElementById('slotsHost');
+  slotsHost.innerHTML = `<div class="loading"><div class="spinner"></div>Buscando horários…</div>`;
+
+  const dateStr = isoDate(state.selectedDate);
+  const duration = state.selectedService.duration_min || 30;
+
+  const [{ data: appts }, { data: blocks }] = await Promise.all([
+    supabase.from('appointments').select('time, duration_min')
+      .eq('studio_id', state.studio.id).eq('date', dateStr)
+      .neq('status', 'cancelado'),
+    supabase.from('blocked_times').select('start_time, end_time')
+      .eq('studio_id', state.studio.id).eq('date', dateStr),
+  ]);
+
+  const busy = [];
+  (appts||[]).forEach(a => {
+    const start = timeToMin(a.time);
+    busy.push([start, start + (a.duration_min || 30)]);
+  });
+  (blocks||[]).forEach(b => {
+    busy.push([timeToMin(b.start_time), timeToMin(b.end_time)]);
+  });
+
+  const start = timeToMin(WORK_START);
+  const end = timeToMin(WORK_END);
+  const slots = [];
+  for (let t = start; t + duration <= end; t += SLOT_STEP_MIN){
+    const overlaps = busy.some(([bs, be]) => t < be && (t+duration) > bs);
+    if (!overlaps) slots.push(t);
+  }
+
+  if (!slots.length){
+    slotsHost.innerHTML = `<div class="empty-slots">Sem horários livres nesse dia. Tente outra data.</div>`;
+    return;
+  }
+
+  slotsHost.innerHTML = `<div class="slots">${slots.map(t => `<div class="slot" data-t="${minToTime(t)}">${minToTime(t)}</div>`).join('')}</div>`;
+  slotsHost.querySelectorAll('.slot').forEach(el => {
+    el.addEventListener('click', () => {
+      state.selectedSlot = el.dataset.t;
+      slotsHost.querySelectorAll('.slot').forEach(s => s.classList.remove('selected'));
+      el.classList.add('selected');
+      document.getElementById('nextBtn').disabled = false;
+    });
+  });
+}
+
+function renderStepAccount(){
+  cardHost.innerHTML = `
+    <h2 class="step-title">Seus dados</h2>
+    <p class="step-sub">Crie sua conta ou entre para confirmar o agendamento</p>
+    <div class="toggle-row">
+      <button data-mode="signup" class="${state.authMode==='signup'?'active':''}">Criar conta</button>
+      <button data-mode="login" class="${state.authMode==='login'?'active':''}">Já tenho conta</button>
+    </div>
+    <div id="formHost"></div>
+    <div id="errHost"></div>
+    <button class="btn btn-primary" id="nextBtn">${state.authMode==='signup'?'Criar conta e continuar':'Entrar e continuar'}</button>
+    <button class="btn btn-ghost" id="backBtn">Voltar</button>
+  `;
+
+  const formHost = document.getElementById('formHost');
+  function renderForm(){
+    if (state.authMode === 'signup'){
+      formHost.innerHTML = `
+        <label>Nome completo</label>
+        <input id="fName" value="${state.name}" placeholder="Seu nome">
+        <label>Telefone / WhatsApp</label>
+        <input id="fPhone" value="${state.phone}" placeholder="(11) 99999-9999">
+        <label>E-mail</label>
+        <input id="fEmail" type="email" value="${state.email}" placeholder="voce@email.com">
+        <label>Senha</label>
+        <input id="fPass" type="password" placeholder="Mínimo 6 caracteres">
+      `;
+    } else {
+      formHost.innerHTML = `
+        <label>E-mail</label>
+        <input id="fEmail" type="email" value="${state.email}" placeholder="voce@email.com">
+        <label>Senha</label>
+        <input id="fPass" type="password" placeholder="Sua senha">
+      `;
+    }
+  }
+  renderForm();
+
+  cardHost.querySelectorAll('.toggle-row button').forEach(b => {
+    b.addEventListener('click', () => { state.authMode = b.dataset.mode; renderStepAccount(); });
+  });
+  document.getElementById('backBtn').addEventListener('click', () => { state.step = 2; renderStep(); });
+  document.getElementById('nextBtn').addEventListener('click', handleAccountSubmit);
+}
+
+async function handleAccountSubmit(){
+  const errHost = document.getElementById('errHost');
+  errHost.innerHTML = '';
+  const email = document.getElementById('fEmail').value.trim();
+  const password = document.getElementById('fPass').value;
+
+  if (!email || !password){
+    errHost.innerHTML = `<div class="error-box">Preencha e-mail e senha.</div>`;
+    return;
+  }
+
+  const nextBtn = document.getElementById('nextBtn');
+  nextBtn.disabled = true;
+  nextBtn.textContent = 'Aguarde…';
+
+  try{
+    if (state.authMode === 'signup'){
+      const name = document.getElementById('fName').value.trim();
+      const phone = document.getElementById('fPhone').value.trim();
+      if (!name || !phone){ throw new Error('Preencha nome e telefone.'); }
+
+      const { data: signUpData, error: signUpErr } = await supabase.auth.signUp({ email, password });
+      if (signUpErr) throw signUpErr;
+
+      const userId = signUpData.user?.id;
+      if (!userId) throw new Error('Não foi possível criar sua conta. Verifique seu e-mail para confirmar o cadastro.');
+
+      const { data: clientRow, error: clientErr } = await supabase
+        .from('clients')
+        .insert({ studio_id: state.studio.id, name, phone, email, auth_user_id: userId })
+        .select().single();
+      if (clientErr) throw clientErr;
+
+      state.name = name; state.phone = phone; state.email = email;
+      state.clientRow = clientRow;
+    } else {
+      const { data: signInData, error: signInErr } = await supabase.auth.signInWithPassword({ email, password });
+      if (signInErr) throw signInErr;
+      const userId = signInData.user.id;
+
+      let { data: clientRow } = await supabase
+        .from('clients')
+        .select('*')
+        .eq('studio_id', state.studio.id)
+        .eq('auth_user_id', userId)
+        .maybeSingle();
+
+      if (!clientRow){
+        const name = signInData.user.email.split('@')[0];
+        const { data: newClient, error: newClientErr } = await supabase
+          .from('clients')
+          .insert({ studio_id: state.studio.id, name, email, auth_user_id: userId })
+          .select().single();
+        if (newClientErr) throw newClientErr;
+        clientRow = newClient;
+      }
+      state.clientRow = clientRow;
+      state.name = clientRow.name; state.email = email; state.phone = clientRow.phone || '';
+    }
+
+    state.step = 4;
+    renderStep();
+  } catch(e){
+    errHost.innerHTML = `<div class="error-box">${e.message || 'Não foi possível continuar. Tente novamente.'}</div>`;
+    nextBtn.disabled = false;
+    nextBtn.textContent = state.authMode==='signup'?'Criar conta e continuar':'Entrar e continuar';
+  }
+}
+
+function renderStepConfirm(){
+  const s = state.selectedService;
+  const dateLabel = state.selectedDate.toLocaleDateString('pt-BR', {weekday:'long', day:'2-digit', month:'long'});
+  cardHost.innerHTML = `
+    <h2 class="step-title">Confirme seu agendamento</h2>
+    <p class="step-sub">Revise os detalhes antes de finalizar</p>
+    <div class="summary-row"><span class="k">Serviço</span><span class="v">${s.name}</span></div>
+    <div class="summary-row"><span class="k">Data</span><span class="v">${dateLabel}</span></div>
+    <div class="summary-row"><span class="k">Horário</span><span class="v">${state.selectedSlot}</span></div>
+    <div class="summary-row"><span class="k">Duração</span><span class="v">${s.duration_min} min</span></div>
+    <div class="summary-row"><span class="k">Valor</span><span class="v">${fmtPrice(s.promo_price || s.price)}</span></div>
+    <div class="summary-row"><span class="k">Cliente</span><span class="v">${state.name}</span></div>
+    <div id="errHost"></div>
+    <button class="btn btn-primary" id="confirmBtn">Confirmar agendamento</button>
+    <button class="btn btn-ghost" id="backBtn">Voltar</button>
+  `;
+  document.getElementById('backBtn').addEventListener('click', () => { state.step = 3; renderStep(); });
+  document.getElementById('confirmBtn').addEventListener('click', handleConfirm);
+}
+
+async function handleConfirm(){
+  const errHost = document.getElementById('errHost');
+  const btn = document.getElementById('confirmBtn');
+  btn.disabled = true; btn.textContent = 'Confirmando…';
+
+  const s = state.selectedService;
+  const payload = {
+    studio_id: state.studio.id,
+    client_id: state.clientRow.id,
+    service_id: s.id,
+    date: isoDate(state.selectedDate),
+    time: state.selectedSlot,
+    duration_min: s.duration_min,
+    price: s.promo_price || s.price,
+    status: 'pendente',
+    payment_status: 'nao_pago',
+    origin: 'pagina_publica',
+  };
+
+  const { data, error } = await supabase.from('appointments').insert(payload).select().single();
+
+  if (error){
+    errHost.innerHTML = `<div class="error-box">Não foi possível confirmar: ${error.message}</div>`;
+    btn.disabled = false; btn.textContent = 'Confirmar agendamento';
+    return;
+  }
+
+  renderSuccess(data);
+}
+
+function renderSuccess(appt){
+  stepperEl.style.display = 'none';
+  const dateLabel = state.selectedDate.toLocaleDateString('pt-BR', {weekday:'long', day:'2-digit', month:'long'});
+  cardHost.innerHTML = `
+    <div class="success-wrap">
+      <div class="success-icon">
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="none"><path d="M4 12l5 5L20 6" stroke="#A15C56" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <h2 class="step-title">Agendamento confirmado!</h2>
+      <p class="step-sub">Te esperamos em ${state.studio.name}</p>
+      ${appt.code ? `<div class="success-code">${appt.code}</div>` : ''}
+      <div class="summary-row"><span class="k">Data</span><span class="v">${dateLabel}</span></div>
+      <div class="summary-row"><span class="k">Horário</span><span class="v">${state.selectedSlot}</span></div>
+      <div class="summary-row"><span class="k">Serviço</span><span class="v">${state.selectedService.name}</span></div>
+      <button class="btn btn-ghost" id="toLandingBtn">Voltar ao início</button>
+    </div>
+  `;
+  document.getElementById('toLandingBtn').addEventListener('click', renderLanding);
+}
+
+init();
+</script>
+</body>
+</html>
